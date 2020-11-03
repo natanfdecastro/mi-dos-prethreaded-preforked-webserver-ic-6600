@@ -22,7 +22,7 @@ int initSocket(int port){
 int main(int argc, char *argv[]){
 
 	int puerto = 8080;
-	string url;
+	char *url = (char *)calloc(5000, sizeof(char));
 	int option;
 	//While para determinar los paramentros que ingresara el usuario
 	while((option = getopt(argc,argv,"u:")) != -1){

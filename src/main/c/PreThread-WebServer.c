@@ -12,7 +12,7 @@
 void *thread_handler(){
 	int new_socket_aux;
   char *message = (char *)calloc(5000, sizeof(char));
-  char[256] actualpath;
+  char actualpath[256];
   ssize_t bytes_read;
 
 	while(1){
@@ -59,7 +59,7 @@ void *thread_handler(){
       while ((bytes_read = fread(buffer, 1, BUFFSIZE, fp)) > 0) {
         // while ((bytes_read = fread(buffer, BUFFSIZE, 1, fp)) > 0) {
         printf("sending %zu bytes \n", bytes_read);
-        write(client_socket, buffer, bytes_read);
+        write(new_socket_aux, buffer, bytes_read);
       }
 			close(new_socket_aux);
 			printf("Conexion finalizada correctamente.\n");
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 	//Se toma el numero de hilos y el puerto como parametros
 	int thread_count;
 	int port;
-  char[256] resources_path;
+  	char *resources_path = (char *)calloc(5000, sizeof(char));
 	int option;
 	//While para determinar los paramentros que ingresara el usuario
 	while((option = getopt(argc, argv, "n:w:p:")) != -1){
