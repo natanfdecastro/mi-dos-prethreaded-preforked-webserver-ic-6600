@@ -6,10 +6,14 @@
 #include <string.h>
 #include "PreThread-WebServer.h"
 
+#define BUFFSIZE 4096
+
 //Encarga de manejar los hilos
 void *thread_handler(){
 	int new_socket_aux;
   char *message = (char *)calloc(5000, sizeof(char));
+  char[256] actualpath;
+  ssize_t bytes_read;
 
 	while(1){
 
@@ -34,7 +38,7 @@ void *thread_handler(){
       // validity check
       if (realpath(message, actualpath) == NULL) {
           printf("ERROR(bad path): %s\n", buffer);
-          close(client_socket);
+          close(new_socket_aux);
           return NULL;
       }
 
@@ -42,7 +46,7 @@ void *thread_handler(){
       FILE *fp = fopen(actualpath, "r");
       if (fp == NULL) {
           printf("ERROR(open): %s\n", buffer);
-          close(client_socket);
+          close(new_socket_aux);
           return NULL;
       }
 
@@ -126,7 +130,6 @@ void initiate_threads(int number_of_threads){
 
 					printf("Espere mientras sea su turno\n");
 	        pthread_cond_wait(&accept_condition, &number_mutex);
-	     		printf("Es su turno para ordenar\n");
 
 	     	}
 
@@ -141,7 +144,7 @@ int main(int argc, char **argv)
 	//Se toma el numero de hilos y el puerto como parametros
 	int thread_count;
 	int port;
-  string resources_path;
+  char[256] resources_path;
 	int option;
 	//While para determinar los paramentros que ingresara el usuario
 	while((option = getopt(argc, argv, "n:w:p:")) != -1){

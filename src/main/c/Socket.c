@@ -1,7 +1,7 @@
-#include "socket.h"
+#include "Socket.h"
 
 //Funcion que crea el servidor (Crea el socket)
-int createSocket(){
+int create_socket(){
 	//Busca el id del socket
 	int socket = socket(AF_INET , SOCK_STREAM , 0);
 	//Si da -1, no se pudo crear el socket
@@ -18,12 +18,12 @@ int createSocket(){
 void bindSocket(int socket, int puerto){
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(puerto);     
+	server.sin_port = htons(puerto);
 	//Bind
 	if( bind(socket,(struct sockaddr *)&server , sizeof(server)) < 0)
 	{
 	    printf("\nError durante el bind\n");
 	}else{
-		printf("\nEscuchando en el puerto -> %i\n",puerto);	
+		printf("\nEscuchando en el puerto -> %i\n",puerto);
 	}
 }

@@ -10,7 +10,7 @@
 struct sockaddr_in server, client;
 int port;
 //FUNCIONES DEL SERVER
-int createSocket();						//Se hace un nuevo server
+int create_socket();						//Se hace un nuevo server
 void bindSocket(int socket, int puerto);	//Se le asigna el puerto al server
 
 
