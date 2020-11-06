@@ -23,6 +23,7 @@ int main(int argc, char *argv[]){
 
 	int puerto = 8080;
 	char *url = (char *)calloc(5000, sizeof(char));
+	char message[5000] = "GET /";
 	int option;
 	//While para determinar los paramentros que ingresara el usuario
 	while((option = getopt(argc,argv,"u:")) != -1){
@@ -36,9 +37,11 @@ int main(int argc, char *argv[]){
 	//Inicia el socket de comunicacion con el servidor
 	sock = initSocket(puerto);
 	int n;
+	strcat(message,url);
+	strcat(message," ");
 
 	//Escribe o manda el mensaje (la prioridad) al server
-	n = write(sock,url,sizeof(url));
+	n = write(sock,message,strlen(message));
 	if (n < 0){
 		printf("ERROR writing to socket");
 	}

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <fcntl.h>
 #include "Socket.h"
 #include <unistd.h>
 #include <string.h>
@@ -8,14 +9,69 @@
 
 #define BUFFSIZE 4096
 
+char extentions[17][5] = {
+	"gif",
+	"jpg",
+	"jpeg",
+	"png",
+	"mp3",
+	"mp4",
+	"avi",
+	"ico",
+	"zip",
+	"gz",
+	"tar",
+	"txt",
+	"json",
+	"doc",
+	"docx",
+	"htm",
+	"html"
+};
+
+char mimes[17][100] = {
+	"image/gif",
+	"image/jpeg",
+	"image/jpeg",
+	"image/png",
+	"audio/mpeg",
+	"audio/mpeg",
+	"video/x-msvideo",
+	"image/vnd.microsoft.icon",
+	"application/zip",
+	"application/gzip",
+	"application/x-tar",
+	"text/plain",
+	"application/json",
+	"application/msword",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	"text/html",
+	"text/html"
+};
+
+// Método que da un "header" de respuesta al cliente.
+void headers(int client, int length, const char *fileType) {
+	char response_header[1000];              // Donde se almacenará el encabezado de la respuesta.
+
+	sprintf(response_header, "HTTP/1.1 200 OK\r\n%sAccept-Ranges: bytes\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n",
+			"Server: PreThreadWebServer\r\n", length, fileType);       // Se especifica la línea del servidor, el largo del archivo
+			                                        // y el tipo de archivo.
+	fprintf(stdout, "Encabezado de la respuesta:\n%s\n", response_header);
+
+	send(client, response_header, strlen(response_header), 0);      // Se le envía el mensaje al cliente.
+}
+
 //Encarga de manejar los hilos
 void *thread_handler(){
 	int new_socket_aux;
+	int i;
+	int j;
   char *message = (char *)calloc(5000, sizeof(char));
+	char *file_name = (char *)calloc(5000, sizeof(char));
+	char *ext = (char *)calloc(50, sizeof(char));
+	char *mime = (char *)calloc(150, sizeof(char));
   char actualpath[256];
   ssize_t bytes_read;
-
-	while(1){
 
 		pthread_mutex_lock(&mutex);
 		while (new_socket == -1){
@@ -35,8 +91,61 @@ void *thread_handler(){
       printf("REQUEST: %s\n", message);
       fflush(stdout);
 
+			i = 0;
+			j = 0;
+
+			if (message[i] == 71) {
+				i += 5;
+				while(message[i] != 32){
+					file_name[j] = message[i];
+					j++;
+					i++;
+				}
+			}
+
+			i = 0;
+			j = 0;
+
+			if(message[i] == 71){
+				i+=5;
+				while(message[i] != 32){
+					if (message[i] == 46) {
+						while(message[i+1] != 32){
+							ext[j] = message[i];
+							j++;
+							i++;
+						}
+					}
+					i++;
+				}
+			}
+			i = 0;
+			while(i < 18){
+				if(strcmp(ext,extentions[i]) == 0){
+					mime = mimes[i];
+					break;
+				}
+				i++;
+			}
+
+/*
+
+			else if () {
+
+			}
+
+			else if () {
+
+			}
+
+			else{
+
+			}
+		*/
+
       // validity check
-      if (realpath(message, actualpath) == NULL) {
+			printf("the file is: %s\n",file_name);
+      if (realpath(file_name, actualpath) == NULL) {
           printf("ERROR(bad path): %s\n", buffer);
           close(new_socket_aux);
           return NULL;
@@ -56,11 +165,13 @@ void *thread_handler(){
    // read file contents and send them to client
    // note this is a fine example program, but rather insecure
    // a real programm would probably limit the client to certain files
-      while ((bytes_read = fread(buffer, 1, BUFFSIZE, fp)) > 0) {
-        // while ((bytes_read = fread(buffer, BUFFSIZE, 1, fp)) > 0) {
-        printf("sending %zu bytes \n", bytes_read);
-        write(new_socket_aux, buffer, bytes_read);
-      }
+			struct stat st;
+			stat(actualpath, &st);
+			int response_length = st.st_size;
+			headers(new_socket_aux, response_length, mime);
+			int response = open(actualpath,O_RDONLY);
+			sendfile(new_socket_aux,response,0, response_length);
+
 			close(new_socket_aux);
 			printf("Conexion finalizada correctamente.\n");
 			pthread_mutex_lock(&number_mutex);
@@ -68,7 +179,6 @@ void *thread_handler(){
 			pthread_mutex_unlock(&number_mutex);
 			pthread_cond_signal(&accept_condition);
 		}
-	}
 }
 
 //FUNCION QUE PONE EL SERVER A ESCUCHAR CONEXIONES
@@ -134,6 +244,7 @@ void initiate_threads(int number_of_threads){
 	     	}
 
 				pthread_mutex_unlock(&number_mutex);
+
 	     }
     }
 }
@@ -144,7 +255,7 @@ int main(int argc, char **argv)
 	//Se toma el numero de hilos y el puerto como parametros
 	int thread_count;
 	int port;
-  	char *resources_path = (char *)calloc(5000, sizeof(char));
+  char *resources_path = (char *)calloc(5000, sizeof(char));
 	int option;
 	//While para determinar los paramentros que ingresara el usuario
 	while((option = getopt(argc, argv, "n:w:p:")) != -1){
